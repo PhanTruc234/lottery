@@ -17,7 +17,7 @@ export function Provider({ children }: ProvidersProps) {
   return (
     <Theme appearance="dark">
       <QueryClientProvider client={queryClient}>
-        <IotaClientProvider networks={networkConfig} defaultNetwork="devnet">
+        <IotaClientProvider networks={networkConfig} defaultNetwork="testnet">
           <WalletProvider autoConnect>{children}</WalletProvider>
         </IotaClientProvider>
       </QueryClientProvider>
