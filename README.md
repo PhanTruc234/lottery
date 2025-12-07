@@ -6,7 +6,7 @@ Lottery contract
 ## Contract Address
 Network: Testnet Package ID : 0x39b376af31f0ea2c6fe9c1fef01ee1a62c7e2f63fe0a98c8de4b1a2a86024d9a
 
-Explorer : [View Contract on IOTA Explorer](https://explorer.iota.org/object/0x39b376af31f0ea2c6fe9c1fef01)
+Explorer : [View Contract on IOTA Explorer]([https://explorer.iota.org/object/0x39b376af31f0ea2c6fe9c1fef01](https://explorer.iota.org/object/0x39b376af31f0ea2c6fe9c1fef01ee1a62c7e2f63fe0a98c8de4b1a2a86024d9a?network=testnet))
 
 ## 🚀 Quick Start
 
