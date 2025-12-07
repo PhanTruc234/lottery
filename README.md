@@ -1,4 +1,4 @@
-# IOTA dApp Starter
+# LOTTERY DAPP
 
 A beginner-friendly Reactjs template for building IOTA dApps with Move smart contracts.
 
