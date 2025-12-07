@@ -1,6 +1,6 @@
 # IOTA dApp Starter
 
-A beginner-friendly Next.js template for building IOTA dApps with Move smart contracts.
+A beginner-friendly Reactjs template for building IOTA dApps with Move smart contracts.
 
 ## 🚀 Quick Start
 
@@ -31,11 +31,11 @@ For detailed instructions, see **[INSTRUCTION_GUIDE.md](./INSTRUCTION_GUIDE.md)*
 ## 📁 Project Structure
 
 ```
-├── app/              # Next.js app directory
-├── components/       # React components
-├── hooks/            # Custom hooks
-├── lib/              # Configuration
-└── contract/         # Move contracts
+├── app/           
+├── components/     
+├── hooks/          
+├── lib/           
+└── contract/       
 ```
 
 ## 📚 Learn More
