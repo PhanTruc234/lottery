@@ -3,7 +3,7 @@
 import { getFullnodeUrl } from "@iota/iota-sdk/client";
 import { createNetworkConfig } from "@iota/dapp-kit";
 export const DEVNET_PACKAGE_ID = "0x2c427943bf77390b52d046421a239598e20585fee6581f5ef566f59dd5b74481";
-export const TESTNET_PACKAGE_ID = "0x39b376af31f0ea2c6fe9c1fef01ee1a62c7e2f63fe0a98c8de4b1a2a86024d9a";
+export const TESTNET_PACKAGE_ID = "0x91845ac43c7d91a266b7e7540c6d2cab11fd30fef826ef00606c3fefdf7802bb";
 export const MAINNET_PACKAGE_ID = "";
 const { networkConfig, useNetworkVariable, useNetworkVariables } =
   createNetworkConfig({

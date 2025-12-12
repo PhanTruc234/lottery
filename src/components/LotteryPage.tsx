@@ -5,6 +5,7 @@ import { useCurrentAccount } from "@iota/dapp-kit";
 import { useContract } from "../hooks/useContract";
 import { Button, Heading, Text, TextField } from "@radix-ui/themes";
 import ClipLoader from "react-spinners/ClipLoader";
+import { useWalletObjects } from "../hooks/useWalletObjects";
 
 const LotteryIntegration = () => {
   const currentAccount = useCurrentAccount();
@@ -16,6 +17,7 @@ const LotteryIntegration = () => {
     state,
     lotteryBoxId,
     winnerId,
+    luckyId,
     isWinner,
   } = useContract();
 
@@ -23,14 +25,7 @@ const LotteryIntegration = () => {
   const [spinningNumber, setSpinningNumber] = useState<number | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [canDraw, setCanDraw] = useState(true);
-
-  useEffect(() => {
-    if (luckyNumber !== null) {
-      actions.checkWinner();
-      setCanDraw(false);
-    }
-  }, [luckyNumber]);
-
+  const wallet = useWalletObjects();
   const startSpin = () => {
     setIsSpinning(true);
 
@@ -55,85 +50,73 @@ const LotteryIntegration = () => {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background text-foreground">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <Heading size="6" className="mb-4">
-            Lottery
-          </Heading>
+          <Heading size="6" className="mb-4">Lottery</Heading>
           <Text>Please connect your wallet to continue.</Text>
         </div>
       </div>
     );
   }
-
   return (
-    <div className="min-h-screen p-4 bg-background text-foreground">
+    <div className="min-h-screen p-4">
       <div className="max-w-2xl mx-auto">
+
         <Heading size="6" className="mb-10 text-center">
-          Lottery
+          🎰 Lottery Game
         </Heading>
+
+        {/* WINNER */}
         {isWinner === true && (
           <div className="mb-4 p-4 rounded-lg border border-green-400 bg-green-200">
             <Heading size="4">You’re a winner!</Heading>
-            <Text className="text-green-600 block">
-              Congratulations! Your ticket matched the lucky number.
+            <Text className="text-green-700">
+              Your ticket matched the lucky number.
             </Text>
-            <Text className="text-xs font-mono text-gray-600">
-              Winner Object ID: {winnerId}
-            </Text>
+            <Text className="text-xs font-mono">Winner Object: {winnerId}</Text>
           </div>
         )}
         {isWinner === false && (
           <div className="mb-4 p-4 rounded-lg border border-red-400 bg-red-200">
-            <Text className="text-red-600 font-semibold">
-              Not a winning ticket.
-            </Text>
+            <Text className="text-red-700 font-semibold">Not a winning ticket.</Text>
           </div>
         )}
         {isSpinning && (
-          <div className="mb-4 p-4 rounded-lg border border-yellow-400 bg-yellow-200">
+          <div className="mb-4 p-4 border rounded bg-yellow-200">
             <Text className="font-bold text-yellow-700">
               Spinning: {spinningNumber}
             </Text>
           </div>
         )}
         {!isSpinning && luckyNumber !== null && (
-          <div className="mb-4 p-4 rounded-lg border border-yellow-400 bg-yellow-200">
+          <div className="mb-4 p-4 border rounded bg-yellow-200">
             <Text className="font-bold text-yellow-700">
               Lucky Number: {luckyNumber}
+            </Text>
+            <Text className="text-xs font-mono text-yellow-800 block mt-1">
+              Lucky Number ID: {luckyId}
             </Text>
           </div>
         )}
         {lotteryBoxId && data && (
-          <div className="mb-4 p-4 rounded-lg border bg-background">
+          <div className="mb-4 p-4 border rounded bg-background">
             <Text className="font-semibold block">Your Ticket</Text>
-
-            <Text className="block">
-              Ticket Number: <strong>{data.number}</strong>
-            </Text>
-
-            <Text className="text-xs font-mono text-gray-60">
-              Ticket ID: {lotteryBoxId}
-            </Text>
+            <Text>Ticket Number: <strong>{data.number}</strong></Text>
+            <Text className="text-xs font-mono block">Ticket ID: {lotteryBoxId}</Text>
           </div>
         )}
-        <div className="p-4 rounded-lg border bg-foreground mb-4">
-          <Heading size="4" className="mb-2">
-            Buy a Ticket
-          </Heading>
+        <div className="p-4 border rounded mb-4 bg-foreground">
+          <Heading size="4" className="mb-2">Buy a Ticket</Heading>
 
           <TextField.Root
             value={ticketNumber}
             onChange={(e) => setTicketNumber(e.target.value)}
             type="number"
-            min="0"
-            max="65535"
             className="mb-3 w-full"
           />
 
           <Button
             size="3"
-            className="cursor-pointer"
             onClick={async () => {
               await actions.buyTicket(parseInt(ticketNumber, 10));
               setTicketNumber("0");
@@ -154,10 +137,8 @@ const LotteryIntegration = () => {
           </Button>
         </div>
         {lotteryBoxId && canDraw && (
-          <div className="p-4 rounded-lg bg-foreground mb-4">
-            <Heading size="4" className="mb-2">
-              Draw Lucky Number
-            </Heading>
+          <div className="p-4 border rounded bg-foreground mb-4">
+            <Heading size="4" className="mb-2">Draw Lucky Number</Heading>
 
             <Button
               size="3"
@@ -169,20 +150,87 @@ const LotteryIntegration = () => {
           </div>
         )}
         {state.hash && (
-          <div className="mt-4 p-4 rounded-lg bg-background ">
-            <Text className="text-sm">Transaction Hash:</Text>
+          <div className="mt-4 p-4 border rounded bg-background">
+            <Text className="text-sm">Transaction:</Text>
             <Text className="font-mono break-all">{state.hash}</Text>
           </div>
         )}
-
-        {/* ERROR */}
         {state.error && (
-          <div className="mt-4 p-4 rounded-lg bg-red-200 border border-red-400">
+          <div className="mt-4 p-4 border bg-red-200 rounded">
             <Text className="text-red-700 font-semibold">
               Error: {state.error.message}
             </Text>
           </div>
         )}
+      </div>
+      <div className="mt-10 p-6 border rounded-lg max-w-2xl mx-auto bg-white shadow-sm">
+        <Heading size="4" className="mb-4 text-gray-800">
+          Your Wallet Objects
+        </Heading>
+
+        {wallet.isLoading && <Text>Loading wallet objects...</Text>}
+
+        {!wallet.isLoading && wallet.objects.length === 0 && (
+          <Text className="text-gray-500">No objects found in your wallet.</Text>
+        )}
+
+        <div className="space-y-4">
+          {!wallet.isLoading &&
+            wallet.objects.map((obj: any) => {
+              const type = obj.data?.content?.type || "";
+              const fields = obj.data?.content?.fields;
+
+              let display = null;
+              if (type.includes("LotteryBox")) {
+                display = (
+                  <div className="text-blue-700">
+                    <div className="font-bold text-lg">Lottery Ticket</div>
+                    <div>Ticket Number: <strong>{fields.ticket.fields.number}</strong></div>
+                  </div>
+                );
+              }
+              else if (type.includes("LuckyNumber")) {
+                display = (
+                  <div className="text-yellow-700">
+                    <div className="font-bold text-lg">Lucky Number</div>
+                    <div>Lucky Number: <strong>{fields.number}</strong></div>
+                  </div>
+                );
+              }
+              else if (type.includes("Winner")) {
+                display = (
+                  <div className="text-green-700">
+                    <div className="font-bold text-lg">Winner Badge</div>
+                    <div>You won the lottery!</div>
+                  </div>
+                );
+              }
+              else {
+                display = (
+                  <div className="text-gray-700">
+                    <div className="font-bold text-lg">Object</div>
+                    <div>Type: {type}</div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={obj.data?.objectId}
+                  className="p-4 rounded-lg border bg-white shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between mb-2">
+                    <Text className="text-xs font-mono text-gray-500">
+                      {obj.data?.objectId}
+                    </Text>
+                    <Text className="text-xs text-gray-400">{type.split("::").pop()}</Text>
+                  </div>
+
+                  {display}
+                </div>
+              );
+            })}
+        </div>
       </div>
     </div>
   );
