@@ -7,6 +7,13 @@ import { Button, Heading, Text, TextField } from "@radix-ui/themes";
 import ClipLoader from "react-spinners/ClipLoader";
 import { useWalletObjects } from "../hooks/useWalletObjects";
 
+const secureRandom100 = () => {
+
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % 100;
+};
+
 const LotteryIntegration = () => {
   const currentAccount = useCurrentAccount();
 
@@ -26,27 +33,44 @@ const LotteryIntegration = () => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [canDraw, setCanDraw] = useState(true);
   const wallet = useWalletObjects();
+
   const startSpin = () => {
+
+    if (isSpinning || state.isLoading || !canDraw) return;
+
     setIsSpinning(true);
 
     const interval = setInterval(() => {
-      setSpinningNumber(Math.floor(Math.random() * 100));
+
+      setSpinningNumber(secureRandom100());
     }, 50);
+
 
     setTimeout(() => {
       clearInterval(interval);
       setIsSpinning(false);
 
       actions.drawLucky().then(() => {
+   
         setTimeout(() => {
           actions.checkWinner();
           setCanDraw(false);
         }, 600);
+      }).catch((e) => {
+ 
+        setIsSpinning(false);
       });
     }, 8000);
   };
 
   const isConnected = !!currentAccount;
+
+  useEffect(() => {
+  
+    if (!lotteryBoxId) {
+      setCanDraw(true);
+    }
+  }, [lotteryBoxId]);
 
   if (!isConnected) {
     return (
@@ -118,11 +142,24 @@ const LotteryIntegration = () => {
           <Button
             size="3"
             onClick={async () => {
-              await actions.buyTicket(parseInt(ticketNumber, 10));
-              setTicketNumber("0");
-              setIsSpinning(false);
-              setSpinningNumber(null);
-              setCanDraw(true);
+              // client-side validation
+              const parsed = Number.parseInt(ticketNumber, 10);
+              if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65535) {
+                // show user-friendly error (you can replace with UI toast)
+                alert("Invalid ticket number. Must be integer between 0 and 65535.");
+                return;
+              }
+
+              try {
+                await actions.buyTicket(parsed);
+                setTicketNumber("0");
+                setIsSpinning(false);
+                setSpinningNumber(null);
+                setCanDraw(true);
+              } catch (e: any) {
+                // errors are set inside hook; show user feedback
+                alert("Buy ticket failed: " + (e?.message || "Unknown error"));
+              }
             }}
             disabled={state.isLoading}
           >
@@ -143,7 +180,7 @@ const LotteryIntegration = () => {
             <Button
               size="3"
               onClick={startSpin}
-              disabled={state.isLoading || isSpinning}
+              disabled={state.isLoading || isSpinning || !canDraw}
             >
               {isSpinning ? "Spinning..." : "Draw Lucky Number"}
             </Button>
@@ -158,7 +195,7 @@ const LotteryIntegration = () => {
         {state.error && (
           <div className="mt-4 p-4 border bg-red-200 rounded">
             <Text className="text-red-700 font-semibold">
-              Error: {state.error.message}
+              Error: {state.error?.message || String(state.error)}
             </Text>
           </div>
         )}
@@ -188,24 +225,21 @@ const LotteryIntegration = () => {
                     <div>Ticket Number: <strong>{fields.ticket.fields.number}</strong></div>
                   </div>
                 );
-              }
-              else if (type.includes("LuckyNumber")) {
+              } else if (type.includes("LuckyNumber")) {
                 display = (
                   <div className="text-yellow-700">
                     <div className="font-bold text-lg">Lucky Number</div>
                     <div>Lucky Number: <strong>{fields.number}</strong></div>
                   </div>
                 );
-              }
-              else if (type.includes("Winner")) {
+              } else if (type.includes("Winner")) {
                 display = (
                   <div className="text-green-700">
                     <div className="font-bold text-lg">Winner Badge</div>
                     <div>You won the lottery!</div>
                   </div>
                 );
-              }
-              else {
+              } else {
                 display = (
                   <div className="text-gray-700">
                     <div className="font-bold text-lg">Object</div>
