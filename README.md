@@ -1,6 +1,12 @@
-# IOTA dApp Starter
+# LOTTERY DAPP
 
 A beginner-friendly Reactjs template for building IOTA dApps with Move smart contracts.
+Lottery contract
+<img width="1849" height="981" alt="Screenshot 2025-12-07 135200" src="https://github.com/user-attachments/assets/ec571386-694b-4301-8e49-64e16164bb8d" />
+## Contract Address
+Network: Testnet Package ID : 0x39b376af31f0ea2c6fe9c1fef01ee1a62c7e2f63fe0a98c8de4b1a2a86024d9a
+
+Explorer : [View Contract on IOTA Explorer](https://explorer.iota.org/object/0x39b376af31f0ea2c6fe9c1fef01ee1a62c7e2f63fe0a98c8de4b1a2a86024d9a?network=testnet)
 
 ## 🚀 Quick Start
 
