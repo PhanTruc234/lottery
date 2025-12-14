@@ -1,5 +1,4 @@
 import { useIotaClient, useIotaClientQuery, useCurrentAccount } from "@iota/dapp-kit";
-
 export const useWalletObjects = () => {
     const account = useCurrentAccount();
     const address = account?.address;

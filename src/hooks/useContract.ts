@@ -47,12 +47,57 @@ export const useContract = () => {
   useEffect(() => {
     if (!address) return;
 
-    setLotteryBoxId(localStorage.getItem(`lotteryBox_${address}`));
-    setLuckyId(localStorage.getItem(`lucky_${address}`));
-    setWinnerId(localStorage.getItem(`winner_${address}`));
+    async function load() {
+      // LOAD ticket ------------------
+      const boxKey = `lotteryBox_${address}`;
+      const savedBox = localStorage.getItem(boxKey);
 
-    const savedLucky = localStorage.getItem(`luckyNumber_${address}`);
-    setLuckyNumber(savedLucky ? Number(savedLucky) : null);
+      if (savedBox) {
+        try {
+          const obj = await client.getObject({
+            id: savedBox,
+            options: { showOwner: true }
+          });
+
+          if (obj.data?.owner?.AddressOwner === address) {
+            setLotteryBoxId(savedBox);
+          } else {
+            localStorage.removeItem(boxKey);
+            setLotteryBoxId(null);
+          }
+        } catch {
+          localStorage.removeItem(boxKey);
+        }
+      }
+
+      // LOAD Lucky --------------------
+      const luckyKey = `lucky_${address}`;
+      const savedLucky = localStorage.getItem(luckyKey);
+
+      if (savedLucky) {
+        try {
+          const obj = await client.getObject({
+            id: savedLucky,
+            options: { showOwner: true }
+          });
+
+          if (obj.data?.owner?.AddressOwner === address) {
+            setLuckyId(savedLucky);
+          } else {
+            localStorage.removeItem(luckyKey);
+            setLuckyId(null);
+          }
+        } catch {
+          localStorage.removeItem(luckyKey);
+        }
+      }
+
+      // LOAD Lucky Number -------------
+      const luckyNum = localStorage.getItem(`luckyNumber_${address}`);
+      setLuckyNumber(luckyNum ? Number(luckyNum) : null);
+    }
+
+    load();
   }, [address]);
   const { data, refetch } = useIotaClientQuery(
     "getObject",
@@ -102,129 +147,150 @@ export const useContract = () => {
     );
   };
   const drawLucky = async () => {
-    if (!packageId || !address) return;
+    if (!packageId || !address) {
+      return Promise.resolve(null);
+    }
 
-    setWinnerId(null);
-    setIsWinner(null);
+    return new Promise((resolve, reject) => {
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${packageId}::${CONTRACT.MODULE}::${CONTRACT.DRAW}`,
+        arguments: [],
+      });
 
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${packageId}::${CONTRACT.MODULE}::${CONTRACT.DRAW}`,
-      arguments: [],
-    });
+      signTx(
+        { transaction: tx as any },
+        {
+          onSuccess: async ({ digest }) => {
+            try {
+              setIsLoading(true);
+              setHash(digest);
 
-    signTx(
-      { transaction: tx as any },
-      {
-        onSuccess: async ({ digest }) => {
-          setIsLoading(true);
-          setHash(digest);
+              await client.waitForTransaction({
+                digest,
+                options: { showEffects: true },
+              });
 
-          await client.waitForTransaction({
-            digest,
-            options: { showEffects: true },
-          });
+              await new Promise((r) => setTimeout(r, 800));
 
-          await new Promise((r) => setTimeout(r, 800));
+              const owned = await client.getOwnedObjects({
+                owner: address,
+                options: { showContent: true },
+              });
 
-          const owned = await client.getOwnedObjects({
-            owner: address,
-            options: { showContent: true },
-          });
+              const luckyObj = owned.data
+                .filter(o => o.data?.content?.type === `${packageId}::lottery::LuckyNumber`)
+                .sort((a, b) => Number(a.data?.content?.id?.creation_num) - Number(b.data?.content?.id?.creation_num))
+                .at(-1);
 
-          const luckyObj = owned.data.find((o: any) =>
-            o.data?.content?.type === `${packageId}::lottery::LuckyNumber`
-          );
+              if (!luckyObj) {
+                resolve(null);
+                return;
+              }
 
-          if (!luckyObj) {
-            console.warn("No LuckyNumber found.");
-            setIsLoading(false);
-            return;
-          }
+              const objId = luckyObj.data.objectId;
+              setLuckyId(objId);
+              localStorage.setItem(`lucky_${address}`, objId);
 
-          const objId = luckyObj?.data?.objectId;
-          if (!objId) {
-            setIsLoading(false);
-            return;
-          }
-          setLuckyId(objId);
-          localStorage.setItem(`lucky_${address}`, objId);
+              const luckyData = await client.getObject({
+                id: objId,
+                options: { showContent: true },
+              });
 
-          const luckyData = await client.getObject({
-            id: objId,
-            options: { showContent: true },
-          });
+              const parsed = parseLucky(luckyData.data!);
+              if (parsed) {
+                setLuckyNumber(parsed.number);
+                localStorage.setItem(
+                  `luckyNumber_${address}`,
+                  parsed.number.toString()
+                );
+              }
 
-          const parsed = parseLucky(luckyData.data!);
-          if (parsed) {
-            setLuckyNumber(parsed.number);
-            localStorage.setItem(
-              `luckyNumber_${address}`,
-              parsed.number.toString()
-            );
-          }
-
-          setIsLoading(false);
-        },
-        onError: (err) => setError(err),
-      }
-    );
-  };
-  const checkWinner = async () => {
-    if (!lotteryBoxId || !luckyId || !packageId || !address) return;
-
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${packageId}::${CONTRACT.MODULE}::${CONTRACT.CHECK}`,
-      arguments: [tx.object(lotteryBoxId), tx.object(luckyId)],
-    });
-
-    signTx(
-      { transaction: tx as any },
-      {
-        onSuccess: async ({ digest }) => {
-          setIsLoading(true);
-          setHash(digest);
-
-          await client.waitForTransaction({
-            digest,
-            options: { showEffects: true },
-          });
-
-          // WAIT FOR BLOCKCHAIN TO INDEX NEW OBJECT
-          await new Promise((r) => setTimeout(r, 900));
-
-          const owned = await client.getOwnedObjects({
-            owner: address,
-            options: { showContent: true },
-          });
-
-          const winnerObj = owned.data.find(
-            (o: any) =>
-              o.data?.content?.dataType === "moveObject" &&
-              o.data?.content?.type === `${packageId}::lottery::Winner`
-          );
-
-          if (winnerObj) {
-            const id = winnerObj?.data?.objectId;
-            if (!id) {
-              setIsWinner(false);
-              localStorage.removeItem(`winner_${address}`);
-              return;
+              resolve(objId); // 🔥 CỰC KỲ QUAN TRỌNG
+            } catch (e) {
+              reject(e);
+            } finally {
+              setIsLoading(false);
             }
-            setWinnerId(id);
-            localStorage.setItem(`winner_${address}`, id);
-            setIsWinner(true);
-          } else {
-            setIsWinner(false);
-            localStorage.removeItem(`winner_${address}`);
-          }
+          },
+          onError: (err) => {
+            setError(err);
+            reject(err);
+          },
+        }
+      );
+    });
+  };
 
-          setIsLoading(false);
-        },
-        onError: (err) => setError(err),
-      }
-    );
+  const checkWinner = async (luckyObjId?: string) => {
+    const lid = luckyObjId ?? luckyId;
+    if (!lid || !lotteryBoxId) return Promise.reject("Missing IDs");
+
+    return new Promise((resolve, reject) => {
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${packageId}::${CONTRACT.MODULE}::${CONTRACT.CHECK}`,
+        arguments: [tx.object(lotteryBoxId), tx.object(lid)],
+      });
+
+      signTx(
+        { transaction: tx as any },
+        {
+          onSuccess: async ({ digest }) => {
+            try {
+              setIsLoading(true);
+              setHash(digest);
+
+              await client.waitForTransaction({
+                digest,
+                options: { showEffects: true },
+              });
+
+              // wait for indexer to catch up
+              await new Promise((r) => setTimeout(r, 900));
+
+              const owned = await client.getOwnedObjects({
+                owner: address,
+                options: { showContent: true },
+              });
+
+              const winnerObj = owned.data.find(
+                (o: any) =>
+                  o.data?.content?.type === `${packageId}::lottery::Winner`
+              );
+
+              if (winnerObj) {
+                const id = winnerObj.data?.objectId;   // FIXED
+                if (!id) {
+                  setIsWinner(false);
+                  localStorage.removeItem(`winner_${address}`);
+                  resolve(false);
+                  return;
+                }
+
+                setWinnerId(id);
+                localStorage.setItem(`winner_${address}`, id);
+                setIsWinner(true);
+                resolve(true);       // 🔥 giải phóng Promise → UI tiếp tục
+              } else {
+                setIsWinner(false);
+                localStorage.removeItem(`winner_${address}`);
+                resolve(false);       // 🔥 bắt buộc resolve
+              }
+            } catch (err) {
+              reject(err);
+            } finally {
+              setIsLoading(false);
+            }
+          },
+
+          onError: (err) => {
+            setError(err);
+            reject(err);
+          },
+        }
+      );
+    });
   };
   return {
     data: ticketData,
