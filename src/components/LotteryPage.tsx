@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCurrentAccount } from "@iota/dapp-kit";
 import { useContract } from "../hooks/useContract";
 import { Button, Heading, Text, TextField } from "@radix-ui/themes";
@@ -46,15 +46,12 @@ const LotteryIntegration = () => {
     setTimeout(async () => {
       clearInterval(interval);
       setIsSpinning(false);
-
-      // STEP 1 — user signs drawLucky
       const objId = await actions.drawLucky();
       if (!objId) {
         alert("Lucky number not ready. Try again.");
         return;
       }
       await new Promise(r => setTimeout(r, 700));
-      // luckyId đã chắc chắn có → mở ví để checkWinner
       await actions.checkWinner(objId);
 
       setCanDraw(false);
@@ -155,7 +152,6 @@ const LotteryIntegration = () => {
                 setSpinningNumber(null);
                 setCanDraw(true);
               } catch (e: any) {
-                // errors are set inside hook; show user feedback
                 alert("Buy ticket failed: " + (e?.message || "Unknown error"));
               }
             }}

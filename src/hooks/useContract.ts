@@ -9,24 +9,28 @@ import {
 import { Transaction } from "@iota/iota-sdk/transactions";
 import { useNetworkVariable } from "../lib/config";
 import type { IotaObjectData } from "@iota/iota-sdk/client";
-
 export const CONTRACT = {
   MODULE: "lottery",
   BUY: "buy_ticket",
   DRAW: "draw_lucky",
   CHECK: "check_winner",
 };
+
 function parseTicket(data: IotaObjectData) {
   if (data.content?.dataType !== "moveObject") return null;
   const f = data.content.fields as any;
+  if (!f?.ticket?.fields?.number) return null;
   return { number: Number(f.ticket.fields.number) };
 }
 
 function parseLucky(data: IotaObjectData) {
   if (data.content?.dataType !== "moveObject") return null;
   const f = data.content.fields as any;
+  if (typeof f?.number === "undefined") return null;
   return { number: Number(f.number) };
 }
+
+
 export const useContract = () => {
   const account = useCurrentAccount();
   const address = account?.address;
@@ -41,14 +45,22 @@ export const useContract = () => {
   const [luckyNumber, setLuckyNumber] = useState<number | null>(null);
   const [isWinner, setIsWinner] = useState<boolean | null>(null);
 
-  const [hash, setHash] = useState<string>();
+  const [hash, setHash] = useState<string | undefined>();
   const [error, setError] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
-    if (!address) return;
+    if (!address) {
+
+      setLotteryBoxId(null);
+      setLuckyId(null);
+      setWinnerId(null);
+      setLuckyNumber(null);
+      setIsWinner(null);
+      return;
+    }
 
     async function load() {
-      // LOAD ticket ------------------
       const boxKey = `lotteryBox_${address}`;
       const savedBox = localStorage.getItem(boxKey);
 
@@ -69,8 +81,6 @@ export const useContract = () => {
           localStorage.removeItem(boxKey);
         }
       }
-
-      // LOAD Lucky --------------------
       const luckyKey = `lucky_${address}`;
       const savedLucky = localStorage.getItem(luckyKey);
 
@@ -91,8 +101,6 @@ export const useContract = () => {
           localStorage.removeItem(luckyKey);
         }
       }
-
-      // LOAD Lucky Number -------------
       const luckyNum = localStorage.getItem(`luckyNumber_${address}`);
       setLuckyNumber(luckyNum ? Number(luckyNum) : null);
     }
@@ -106,8 +114,19 @@ export const useContract = () => {
   );
 
   const ticketData = data?.data ? parseTicket(data.data) : null;
+
   const buyTicket = async (num: number) => {
-    if (!packageId || !address) return;
+    setError(null);
+    if (!packageId || !address) {
+      setError(new Error("Network package or address not available"));
+      return;
+    }
+
+    if (!Number.isInteger(num) || num < 0 || num > 65535) {
+      setError(new Error("Invalid ticket number. Must be integer between 0 and 65535."));
+      return;
+    }
+
     setWinnerId(null);
     setLuckyId(null);
     setLuckyNumber(null);
@@ -123,29 +142,36 @@ export const useContract = () => {
       { transaction: tx as any },
       {
         onSuccess: async ({ digest }) => {
-          setIsLoading(true);
-          setHash(digest);
+          try {
+            setIsLoading(true);
+            setHash(digest);
 
-          const res = await client.waitForTransaction({
-            digest,
-            options: { showEffects: true },
-          });
+            const res = await client.waitForTransaction({
+              digest,
+              options: { showEffects: true },
+            });
 
-          const created = res.effects?.created ?? [];
-          const objId = created[0]?.reference?.objectId;
+            const created = res.effects?.created ?? [];
+            const objId = created[0]?.reference?.objectId;
 
-          if (objId) {
-            setLotteryBoxId(objId);
-            localStorage.setItem(`lotteryBox_${address}`, objId);
-            await refetch();
+            if (objId) {
+              setLotteryBoxId(objId);
+              await setSecureItem(`lotteryBox_${address}`, { id: objId });
+              await refetch();
+            }
+          } catch (e) {
+            setError(e);
+          } finally {
+            setIsLoading(false);
           }
-
-          setIsLoading(false);
         },
-        onError: (err) => setError(err),
+        onError: (err) => {
+          setError(err);
+        },
       }
     );
   };
+
   const drawLucky = async () => {
     if (!packageId || !address) {
       return Promise.resolve(null);
@@ -206,7 +232,7 @@ export const useContract = () => {
                 );
               }
 
-              resolve(objId); // 🔥 CỰC KỲ QUAN TRỌNG
+              resolve(objId);
             } catch (e) {
               reject(e);
             } finally {
@@ -245,10 +271,7 @@ export const useContract = () => {
                 digest,
                 options: { showEffects: true },
               });
-
-              // wait for indexer to catch up
               await new Promise((r) => setTimeout(r, 900));
-
               const owned = await client.getOwnedObjects({
                 owner: address,
                 options: { showContent: true },
@@ -260,7 +283,7 @@ export const useContract = () => {
               );
 
               if (winnerObj) {
-                const id = winnerObj.data?.objectId;   // FIXED
+                const id = winnerObj.data?.objectId;
                 if (!id) {
                   setIsWinner(false);
                   localStorage.removeItem(`winner_${address}`);
@@ -271,11 +294,11 @@ export const useContract = () => {
                 setWinnerId(id);
                 localStorage.setItem(`winner_${address}`, id);
                 setIsWinner(true);
-                resolve(true);       // 🔥 giải phóng Promise → UI tiếp tục
+                resolve(true);
               } else {
                 setIsWinner(false);
                 localStorage.removeItem(`winner_${address}`);
-                resolve(false);       // 🔥 bắt buộc resolve
+                resolve(false);
               }
             } catch (err) {
               reject(err);
@@ -292,6 +315,7 @@ export const useContract = () => {
       );
     });
   };
+
   return {
     data: ticketData,
     luckyNumber,
@@ -303,3 +327,4 @@ export const useContract = () => {
     isWinner,
   };
 };
+
