@@ -263,5 +263,4 @@ const LotteryIntegration = () => {
     </div>
   );
 };
-
 export default LotteryIntegration;
