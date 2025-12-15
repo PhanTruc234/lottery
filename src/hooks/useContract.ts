@@ -174,8 +174,6 @@ export const useContract = () => {
           try {
             setIsLoading(true);
             setHash(digest);
-
-            // 🔥 LẤY EFFECTS CREATED
             const res = await client.waitForTransaction({
               digest,
               options: { showEffects: true },
@@ -197,8 +195,6 @@ export const useContract = () => {
 
             const objId = luckyRef.reference.objectId;
             setLuckyId(objId);
-
-            // 🔥 ĐỌC NUMBER TỪ OBJECT VỪA TẠO
             const luckyData = await client.getObject({
               id: objId,
               options: { showContent: true },
