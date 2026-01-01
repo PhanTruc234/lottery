@@ -180,8 +180,6 @@ export const useContract = () => {
             });
 
             const created = res.effects?.created ?? [];
-
-            // 🔥 LẤY ĐÚNG LuckyNumber VỪA TẠO
             const luckyRef = created.find(
               (o) =>
                 o.owner?.AddressOwner === address &&
