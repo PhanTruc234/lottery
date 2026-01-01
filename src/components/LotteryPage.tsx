@@ -82,10 +82,8 @@ const LotteryIntegration = () => {
       <div className="max-w-2xl mx-auto">
 
         <Heading size="6" className="mb-10 text-center">
-          🎰 Lottery Game
+          Lottery Game
         </Heading>
-
-        {/* WINNER */}
         {isWinner === true && (
           <div className="mb-4 p-4 rounded-lg border border-green-400 bg-green-200">
             <Heading size="4">You’re a winner!</Heading>
@@ -137,10 +135,8 @@ const LotteryIntegration = () => {
           <Button
             size="3"
             onClick={async () => {
-              // client-side validation
               const parsed = Number.parseInt(ticketNumber, 10);
               if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65535) {
-                // show user-friendly error (you can replace with UI toast)
                 alert("Invalid ticket number. Must be integer between 0 and 65535.");
                 return;
               }
