@@ -1,3 +1,53 @@
+# 🎰 Lottery DApp trên Blockchain IOTA
+## Bài tập lớn môn: AN TOÀN VÀ BẢO MẬT THÔNG TIN
+
+---
+
+## 👨‍🎓 Thông tin bài tập lớn
+
+- **Tên đề tài:**  
+  Xây dựng ứng dụng Lottery DApp trên nền tảng Blockchain tích hợp ví IOTA
+
+- **Môn học:** An toàn và Bảo mật Thông tin  
+- **Loại bài:** Bài tập lớn  
+- **Sinh viên thực hiện:**  
+  - Lê Đức Duy
+  - Phan Minh Trúc
+
+---
+
+## 🎯 Mục tiêu đề tài
+
+Trong bối cảnh các hệ thống tập trung dễ bị:
+- Gian lận dữ liệu  
+- Can thiệp kết quả  
+- Thiếu minh bạch và khó kiểm chứng  
+
+Đề tài này hướng tới việc:
+- Ứng dụng **Blockchain** để đảm bảo **tính toàn vẹn (Integrity)** của dữ liệu
+- Đảm bảo **tính minh bạch (Transparency)** trong quá trình quay số
+- Đảm bảo **xác thực và phân quyền (Authentication & Authorization)** thông qua ví điện tử
+- Giảm thiểu rủi ro **tấn công sửa đổi dữ liệu (Tampering)**
+
+---
+
+## 🔐 Ý nghĩa về An toàn & Bảo mật Thông tin
+
+Ứng dụng Lottery DApp đáp ứng các nguyên tắc bảo mật quan trọng:
+
+- **Integrity (Toàn vẹn dữ liệu):**  
+  Logic quay số và danh sách người chơi được lưu trữ trực tiếp trên blockchain, không thể chỉnh sửa trái phép.
+
+- **Authentication (Xác thực):**  
+  Người dùng đăng nhập và tương tác hệ thống thông qua **IOTA Wallet**.
+
+- **Non-repudiation (Không thể chối bỏ):**  
+  Mọi giao dịch đều được ghi nhận trên blockchain và có thể truy vết.
+
+- **Transparency (Minh bạch):**  
+  Kết quả quay số có thể kiểm chứng công khai thông qua Explorer.
+
+---
 # LOTTERY DAPP
 
 A beginner-friendly Reactjs template for building IOTA dApps with Move smart contracts.
