@@ -11,8 +11,8 @@
 - **Môn học:** An toàn và Bảo mật Thông tin  
 - **Loại bài:** Bài tập lớn  
 - **Sinh viên thực hiện:**  
-  - Lê Đức Duy
-  - Phan Minh Trúc
+  - Lê Đức Duy -23010772
+  - Phan Minh Trúc - 23010818
 
 ---
 
